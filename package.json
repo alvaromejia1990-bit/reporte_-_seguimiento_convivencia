@@ -1,0 +1,36 @@
+{
+  "name": "control-llegadas-tarde",
+  "version": "1.0.0",
+  "description": "Plataforma institucional para el registro, control, seguimiento y análisis de llegadas tarde de estudiantes.",
+  "main": "src/server.js",
+  "private": true,
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "crear-admin": "node scripts/crear-admin.js",
+    "demo": "node scripts/seed-demo.js",
+    "respaldo": "node scripts/respaldo.js"
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "chart.js": "^4.6.1",
+    "cookie-parser": "^1.4.7",
+    "csv-parse": "^7.0.3",
+    "dotenv": "^18.0.9",
+    "exceljs": "^4.4.0",
+    "express": "^5.3.0",
+    "express-rate-limit": "^8.7.1",
+    "helmet": "^8.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.5.0",
+    "nodemailer": "^10.2.1",
+    "pdfkit": "^0.20.2"
+  },
+  "overrides": {
+    "uuid": "^11.1.1"
+  }
+}

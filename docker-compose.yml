@@ -1,0 +1,11 @@
+services:
+  tardanzas:
+    build: .
+    container_name: control-llegadas-tarde
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data
+      - ./public/img/logo.png:/app/public/img/logo.png:ro   # opcional: escudo de la institución
