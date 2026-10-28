@@ -1,255 +1,169 @@
-# Plataforma institucional de control de llegadas tarde
+# Control de Llegadas Tarde · Plataforma institucional
 
-Sistema web para **registrar estudiantes, reportar llegadas tarde, hacer seguimiento a reincidentes, notificar a los acudientes por correo y generar informes estadísticos** en PDF y Excel. Funciona en computadores, tabletas y celulares, con base de datos centralizada y acceso por roles.
+Plataforma web para **registrar estudiantes, reportar llegadas tarde, hacer seguimiento a reincidentes, notificar a los acudientes por correo y generar informes estadísticos** en PDF y Excel. Es responsiva (computador, tableta y celular), usa una **base de datos centralizada y sincronizada** con control de acceso por roles, y se publica directamente desde **GitHub Pages**.
 
----
+| Capa | Tecnología | Dónde vive |
+|---|---|---|
+| Frontend | HTML + CSS + JavaScript (sin compilación) | Repositorio → GitHub Pages |
+| Base de datos | PostgreSQL con seguridad por filas (RLS) | Supabase (plan gratuito suficiente) |
+| Autenticación | Supabase Auth (correo + contraseña) | Supabase |
+| Backend | Funciones de servidor (Deno) | Supabase Edge Functions |
+| Correo real | Brevo (300 correos/día gratis) o Resend | API del proveedor |
 
-## 1. Contenido del proyecto
-
-```
-control-tardanzas/
-├── src/                      Backend (Node.js + Express)
-│   ├── server.js             Servidor, seguridad, rutas
-│   ├── db.js                 Esquema de la base de datos (SQLite) y configuración
-│   ├── utils.js              Fechas (zona horaria), validaciones, enmascaramiento
-│   ├── middleware/auth.js    Sesiones, roles y protección CSRF
-│   ├── routes/               API: auth, estudiantes, tardanzas, seguimiento, informes, configuración
-│   └── services/             Importación Excel/CSV, correo SMTP, PDF, estadísticas, exportación
-├── public/                   Frontend (HTML, CSS y JavaScript sin compilación)
-│   ├── index.html
-│   ├── css/styles.css
-│   ├── js/app.js, api.js, ui.js
-│   ├── js/views/             registro, reportes, seguimiento, informes, configuración
-│   └── img/                  escudo.svg (por defecto) · coloque aquí logo.png
-├── scripts/                  crear-admin, seed-demo (datos de prueba), respaldo
-├── tests/                    Pruebas automáticas de la API (npm test)
-├── ejemplos/                 estudiantes_ejemplo.csv
-├── .github/                  Pruebas automáticas (GitHub Actions), Dependabot, plantillas
-├── .env.example              Plantilla de configuración
-├── Dockerfile, docker-compose.yml
-├── SECURITY.md
-└── README.md
-```
-
-**Tecnologías:** Node.js 22.13+ (o 24 LTS), Express 5, SQLite integrado en Node (`node:sqlite`, modo WAL; sin compilar dependencias nativas), bcrypt, JWT en cookie *httpOnly*, Nodemailer (SMTP), PDFKit, ExcelJS, Chart.js.
+> **Modo demostración:** si `js/config.js` no tiene datos de Supabase, la plataforma funciona con datos de ejemplo guardados en el navegador (cuentas `admin@demo.edu.co` / `admin123` y `docente@demo.edu.co` / `docente123`). Sirve para conocerla y capacitar; **no use datos reales en ese modo**.
 
 ---
 
-## 2. Funcionalidades
+## 1. Funcionalidades
 
-| Sección | Qué hace |
-|---|---|
-| **Registro** | Base de estudiantes (documento, nombre, edad, grado, curso, acudiente, correo, teléfono, dirección). Formulario para crear, consultar, editar, retirar/reactivar y eliminar. **Carga masiva** desde Excel o CSV con vista previa, validación fila por fila, actualización de registros existentes y opción de crear grados/cursos faltantes. Plantilla descargable. Exportación a Excel. |
-| **Reportes** | Filtro por grado y curso (o búsqueda por nombre). Botón **“Reportar llegada tarde”** por estudiante y **selección múltiple**. Fecha, hora, grado, curso y período se registran automáticamente con la hora oficial del servidor. **No permite duplicar** un reporte del mismo estudiante en la misma jornada. Contador acumulado por período y total. Lista de reportes del día, sincronizada cada 30 s entre docentes. |
-| **Seguimiento** | Lista automática de estudiantes con **más de 4** llegadas tarde (límite configurable), con filtros por período, grado y curso. Botón **“Notificar acudiente”** con vista previa del correo y **PDF adjunto**. Historial con fecha de envío y **estado de entrega** (enviado / rechazado / fallido). Reporte individual en pantalla y descarga en PDF. Aviso si ya se notificó el mismo día. |
-| **Informes** | Dashboard con indicadores (total, estudiantes con reportes, reincidentes, porcentajes, promedios, día pico, curso crítico), tendencia diaria/semanal/mensual, comparativos por grado, curso, período y grado×período, distribución por día de la semana y franja horaria, top 10. Filtros por período, grado, curso, estudiante y rango de fechas. **Exportación a PDF y Excel** con tablas y gráficos. |
-| **Configuración** (administrador) | Datos de la institución y límite de seguimiento, períodos académicos, grados y cursos, usuarios y roles, prueba de correo, auditoría y descarga de respaldo. |
+**1 · Registro.** Base de estudiantes con tipo y número de documento, apellidos, nombres, edad, grado, curso, acudiente, parentesco, correo, teléfono y dirección. Formulario para registrar, consultar, editar, retirar/reactivar y eliminar. **Carga masiva** desde Excel (.xlsx/.xls) o CSV con vista previa, validación fila por fila, actualización de registros existentes (por documento) y opción de crear grados/cursos faltantes. Plantilla descargable y exportación del listado.
+**Sin duplicados:** documento único y nombre completo único dentro de cada curso (validado en el navegador y en la base de datos).
+
+**2 · Reportes.** Filtros por grado y curso (o búsqueda), botón **«Reportar llegada tarde»** por estudiante y **selección múltiple**. Se registran automáticamente estudiante, **fecha, hora (del servidor), grado, curso y período académico**, y el usuario que reporta. El contador acumulado se actualiza solo. **No se permite** más de un reporte por estudiante en la misma jornada (restricción `UNIQUE` en la base). Panel de reportes del día, sincronizado en tiempo real entre docentes. El administrador puede anular reportes y registrar correcciones con otra fecha.
+
+**3 · Seguimiento.** Lista automática de estudiantes con **más de 4** llegadas tarde (límite configurable) por período, grado y curso. Botón **«Notificar acudiente»** con vista previa del correo institucional (estudiante, grado, curso, período, fechas y horas, cantidad, datos del acudiente). Envío individual o masivo, protección contra envíos repetidos el mismo día, **historial** con fecha de envío y **estado de entrega** (enviado → entregado → leído, o rebotado/fallido) actualizado por webhook del proveedor. **Reporte individual** en pantalla y descarga en PDF y Excel.
+
+**4 · Informes.** Dashboard con indicadores (total, estudiantes con reportes, % de la matrícula, reincidentes, promedio, día pico, notificaciones), **tendencia diaria/semanal/mensual**, por grado, por curso, **comparativo por período** (por grado), día de la semana, franja horaria y ranking. Filtros por período, grado, curso, estudiante y rango de fechas. **Exportación a PDF y Excel** con tablas, gráficos y análisis narrativo.
+
+**Configuración (administrador).** Datos institucionales y firma, límite de seguimiento, **períodos académicos** (sin solapes), **grados y cursos**, **usuarios y roles**, auditoría y respaldo completo en Excel.
 
 ### Roles y protección de datos
 
 | Permiso | Administrador | Docente |
 |---|:-:|:-:|
-| Reportar llegadas tarde | ✔ | ✔ |
-| Consultar estudiantes | ✔ (datos completos) | ✔ (contacto **enmascarado**) |
-| Crear, editar, importar, exportar, retirar o eliminar estudiantes | ✔ | — |
-| Anular reportes | ✔ | — |
-| Seguimiento, notificar acudientes, reporte individual | ✔ | ✔ (sin ver el correo completo) |
+| Reportar llegadas tarde (hora del servidor) | ✔ | ✔ |
+| Consultar estudiantes (datos básicos) | ✔ | ✔ |
+| Ver datos de contacto de acudientes | ✔ | — (protegidos en la base de datos) |
+| Crear, editar, importar, retirar y eliminar estudiantes | ✔ | — |
+| Anular reportes / registrar con otra fecha | ✔ | — |
+| Seguimiento, notificar acudientes, reporte individual | ✔ | ✔ (correo enmascarado) |
 | Informes y exportaciones | ✔ | ✔ |
 | Configuración, usuarios, auditoría, respaldo | ✔ | — |
 
-Medidas de seguridad incluidas: contraseñas con bcrypt, sesión en cookie *httpOnly* + *SameSite=strict*, cierre de sesiones al cambiar contraseña o rol, límite de intentos de ingreso (10 cada 15 min), cabeceras de seguridad (Helmet/CSP), validación en servidor, consultas parametrizadas, registro de **auditoría** de todas las acciones sensibles y avisos de la **Ley 1581 de 2012** en documentos y correos. Las contraseñas del correo nunca se guardan en la base de datos (solo en `.env`).
+La seguridad **no depende del navegador**: las políticas RLS de PostgreSQL impiden que un docente lea la tabla `estudiantes` (solo la vista `v_estudiantes_basico`, sin datos del acudiente), que modifique o elimine reportes, o que un usuario inactivo o anónimo acceda a cualquier dato. Las cuentas que se registren por su cuenta quedan **inactivas** hasta que un administrador las habilite. Todas las acciones sensibles quedan en **auditoría**. Avisos de la Ley 1581 de 2012 en correos y documentos.
 
 ---
 
-## 3. Instalación rápida (prueba local)
+## 2. Estructura del repositorio
 
-Requisitos: **Node.js 22.13 o superior** — se recomienda la versión LTS más reciente (https://nodejs.org). No se necesitan herramientas de compilación ni un servidor de base de datos aparte.
-
-```bash
-cd control-tardanzas
-npm install
-cp .env.example .env          # en Windows: copy .env.example .env
 ```
-
-Edite `.env` y complete como mínimo:
-
-```ini
-JWT_SECRETO=        # genere uno: node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
-ADMIN_EMAIL=coordinacion@suinstitucion.edu.co
-ADMIN_CLAVE=UnaClaveSegura2026
-INSTITUCION_NOMBRE=Institución Educativa ...
+├── index.html                  Aplicación (una sola página)
+├── css/styles.css              Sistema visual institucional y diseño responsivo
+├── js/
+│   ├── config.js               ← URL y clave pública de Supabase
+│   ├── util.js                 Fechas (zona America/Bogota), validación, modales, íconos
+│   ├── backend-supabase.js     Conexión a la base de datos real
+│   ├── backend-demo.js         Modo demostración (navegador)
+│   ├── estadisticas.js         Cálculos del seguimiento y del dashboard
+│   ├── exportar.js             Generación de PDF y Excel
+│   ├── plantilla-correo.js     Vista previa del correo (modo demostración)
+│   ├── app.js                  Sesión, menú y navegación
+│   └── vistas/                 registro, reportes, seguimiento, informes, configuracion
+├── vendor/                     Bibliotecas incluidas (Supabase, Chart.js, SheetJS, ExcelJS, jsPDF)
+├── img/escudo.svg              Escudo por defecto (reemplácelo por el de su institución)
+├── supabase/
+│   ├── schema.sql              Tablas, restricciones, disparadores, RLS y funciones
+│   ├── datos_iniciales.sql     Períodos 2026, grados 6.º a 11.º y cursos (opcional)
+│   ├── config.toml             Configuración de funciones para Supabase CLI
+│   ├── .env.ejemplo            Plantilla de secretos del correo
+│   └── functions/
+│       ├── notificar-acudiente/  Construye y envía el correo; registra el historial
+│       ├── gestionar-usuarios/   Crear, activar, cambiar rol, restablecer clave, eliminar
+│       ├── webhook-correo/       Recibe estados de entrega (entregado, leído, rebotado)
+│       └── _shared/              Utilidades y plantilla del correo
+├── ejemplos/estudiantes_ejemplo.csv
+└── .github/workflows/pages.yml  Publicación automática en GitHub Pages
 ```
-
-Opcional — cargar datos ficticios para explorar (336 estudiantes y ~1.200 reportes):
-
-```bash
-npm run demo        # crea también docente@demo.edu.co / Docente2026
-```
-
-Inicie el servidor:
-
-```bash
-npm start
-```
-
-Abra **http://localhost:3000** e ingrese con el administrador del `.env`. Cambie la contraseña en *Configuración › Mi cuenta*.
-
-> Para usar la plataforma en la red del colegio, los equipos acceden con la IP del servidor: `http://192.168.x.x:3000`.
 
 ---
 
-## 4. Puesta en marcha institucional (orden recomendado)
+## 3. Instalación paso a paso (≈ 30 minutos)
 
-1. **Configuración › Institución:** nombre, sigla, ciudad, firma de los correos y límite de llegadas tarde (por defecto 4 → seguimiento desde la 5.ª).
-2. **Configuración › Períodos académicos:** cree los períodos con sus fechas. *Un reporte solo se puede registrar si la fecha de hoy está dentro de un período.*
-3. **Configuración › Grados y cursos:** cree grados (Sexto, Séptimo…) con su orden y los cursos (601, 602…). También pueden crearse automáticamente en la carga masiva.
-4. **Registro › Carga masiva:** descargue la plantilla, diligénciela (o use el SIMAT exportado con esos encabezados) y cargue el archivo. Revise la vista previa y presione *Guardar cambios*.
-5. **Configuración › Usuarios:** cree las cuentas de docentes y coordinadores.
-6. **Configuración › Correo:** verifique la conexión SMTP y envíe un correo de prueba.
-7. Escudo: copie `logo.png` (fondo transparente, cuadrado) en `public/img/`.
+### Paso 1 · Crear el repositorio en GitHub
+1. Cree un repositorio nuevo (puede ser privado si su plan de GitHub lo permite con Pages; si no, público: **no contiene datos personales**, estos viven en Supabase).
+2. Suba todo el contenido de esta carpeta a la rama `main`:
+   ```bash
+   git init && git add . && git commit -m "Plataforma de control de llegadas tarde"
+   git branch -M main
+   git remote add origin https://github.com/SU-USUARIO/llegadas-tarde.git
+   git push -u origin main
+   ```
 
-### Formato de la carga masiva
+### Paso 2 · Crear el proyecto en Supabase
+1. Regístrese en <https://supabase.com> y cree un proyecto (región recomendada: *East US* o *São Paulo*). Guarde la contraseña de la base de datos.
+2. Abra **SQL Editor → New query**, pegue el contenido de `supabase/schema.sql` y pulse **Run**.
+3. (Opcional) Ejecute también `supabase/datos_iniciales.sql`, ajustando antes nombres, fechas de períodos, grados y cursos.
+4. En **Authentication → Sign In / Providers → Email**: desactive **«Allow new users to sign up»** (las cuentas las crea el administrador) y, si lo desea, desactive *Confirm email*.
+5. En **Authentication → URL Configuration** escriba como *Site URL* la dirección de su sitio en GitHub Pages (Paso 5), p. ej. `https://su-usuario.github.io/llegadas-tarde/`, y agréguela en *Redirect URLs* (necesario para recuperar contraseñas).
 
-Columnas reconocidas (el orden no importa; se aceptan variantes como “Grupo” o “Celular”):
+### Paso 3 · Crear el primer administrador
+En **Authentication → Users → Add user → Create new user**, escriba su correo y una contraseña segura (marque *Auto Confirm User*). **El primer usuario creado queda automáticamente como administrador activo.** Los demás usuarios créelos desde la plataforma (*Configuración → Usuarios y roles*).
 
-`Documento · Nombre completo · Edad · Grado · Curso · Acudiente · Correo acudiente · Teléfono · Dirección`
+### Paso 4 · Configurar el correo y las funciones de servidor
+1. **Proveedor de correo (elija uno):**
+   - **Brevo** (recomendado si no tiene dominio propio): cree una cuenta en <https://www.brevo.com>, verifique el remitente (*Senders, Domains & Dedicated IPs → Senders*), por ejemplo `convivencia@su-institucion.edu.co` o una cuenta institucional de Gmail, y genere una clave en *SMTP & API → API Keys*.
+   - **Resend**: cree una cuenta en <https://resend.com>, **verifique el dominio** de la institución y genere una API key.
+2. Instale la CLI de Supabase (<https://supabase.com/docs/guides/cli>) y desde la carpeta del repositorio ejecute:
+   ```bash
+   supabase login
+   supabase link --project-ref SU_PROJECT_REF          # aparece en la URL del proyecto
+   cp supabase/.env.ejemplo supabase/.env              # edite los valores reales
+   supabase secrets set --env-file supabase/.env
+   supabase functions deploy notificar-acudiente
+   supabase functions deploy gestionar-usuarios
+   supabase functions deploy webhook-correo --no-verify-jwt
+   ```
+   | Secreto | Uso |
+   |---|---|
+   | `EMAIL_PROVIDER` | `brevo` o `resend` |
+   | `BREVO_API_KEY` / `RESEND_API_KEY` | Clave del proveedor elegido |
+   | `EMAIL_FROM` | Correo remitente verificado |
+   | `EMAIL_FROM_NAME` | Nombre visible del remitente |
+   | `WEBHOOK_TOKEN` | Cadena aleatoria larga que protege el webhook |
+   | `SITE_URL` | Origen del sitio (p. ej. `https://su-usuario.github.io`) para CORS |
 
-- Obligatorias: **Nombre completo, Grado, Curso**. Muy recomendado: **Documento** (es la llave que evita duplicados).
-- El grado acepta “Sexto”, “6” o “6°”.
-- Si el estudiante existe (por documento, o por nombre si no hay documento) se **actualiza**; las celdas vacías no borran datos.
-- CSV separado por coma o punto y coma, UTF‑8 o ANSI (Excel). Ver `ejemplos/estudiantes_ejemplo.csv`.
+   *Sin CLI:* también puede crear cada función en **Edge Functions → Deploy a new function → Via Editor**, pegando el `index.ts` y los archivos de `_shared/`, y cargar los secretos en **Edge Functions → Secrets**. En `webhook-correo` desactive *Enforce JWT verification*.
+3. **Estado de entrega (webhook):** registre la URL
+   `https://SU_PROJECT_REF.supabase.co/functions/v1/webhook-correo?token=SU_WEBHOOK_TOKEN`
+   - Brevo: *Transactional → Settings → Webhook* con los eventos *Delivered, Opened, Hard/Soft bounce, Blocked, Spam*.
+   - Resend: *Webhooks → Add endpoint* con `email.delivered`, `email.opened`, `email.bounced`, `email.complained`.
 
----
+### Paso 5 · Conectar el sitio y publicarlo
+1. En Supabase → **Project Settings → API** copie la *Project URL* y la clave **anon public**.
+2. Elija una opción:
+   - **A (recomendada):** en GitHub → *Settings → Secrets and variables → Actions → Variables*, cree `SUPABASE_URL` y `SUPABASE_ANON_KEY`. El flujo `.github/workflows/pages.yml` genera `js/config.js` al publicar.
+   - **B:** edite directamente `js/config.js` con esos dos valores y haga *commit*.
+   > La clave *anon* es pública por diseño; la protección real son las políticas RLS. **Nunca** ponga la clave *service_role* en el repositorio.
+3. En GitHub → *Settings → Pages → Build and deployment → Source*: **GitHub Actions**. Cada `push` a `main` publica el sitio en `https://SU-USUARIO.github.io/NOMBRE-REPO/`.
 
-## 5. Configuración del correo institucional (SMTP)
-
-Complete en `.env` y reinicie el servidor:
-
-**Google Workspace / Gmail** (requiere verificación en dos pasos y una *contraseña de aplicación*: Cuenta de Google › Seguridad › Contraseñas de aplicaciones):
-```ini
-SMTP_HOST=smtp.gmail.com
-SMTP_PUERTO=465
-SMTP_SEGURO=true
-SMTP_USUARIO=convivencia@suinstitucion.edu.co
-SMTP_CLAVE=abcdefghijklmnop
-CORREO_REMITENTE="Coordinación de Convivencia <convivencia@suinstitucion.edu.co>"
-```
-
-**Microsoft 365 / Outlook** (el buzón debe tener habilitado *SMTP AUTH*):
-```ini
-SMTP_HOST=smtp.office365.com
-SMTP_PUERTO=587
-SMTP_SEGURO=false
-SMTP_USUARIO=convivencia@suinstitucion.edu.co
-SMTP_CLAVE=********
-CORREO_REMITENTE="Coordinación de Convivencia <convivencia@suinstitucion.edu.co>"
-```
-
-**Servicios transaccionales** (recomendado para volúmenes altos): Brevo (`smtp-relay.brevo.com:587`), SendGrid (`smtp.sendgrid.net:587`, usuario `apikey`), Amazon SES, Mailgun. Verifique el dominio remitente (SPF/DKIM) para evitar que los correos lleguen a spam.
-
-**Estado de entrega:** “Enviado” significa que el servidor de correo **aceptó** el mensaje para el destinatario; “Rechazado”, que rechazó la dirección; “Fallido”, error de conexión o autenticación. Los rebotes posteriores (buzón lleno, etc.) llegan como respuesta al remitente o a `CORREO_RESPONDER_A`.
-
----
-
-## 6. Despliegue en producción
-
-La plataforma debe publicarse con **HTTPS**. Opciones:
-
-### A. Servidor propio (Ubuntu) con PM2 y Nginx
-```bash
-sudo apt install -y nodejs npm nginx
-git clone … /opt/tardanzas   # o copie la carpeta
-cd /opt/tardanzas && npm ci --omit=dev && cp .env.example .env && nano .env
-sudo npm i -g pm2 && pm2 start src/server.js --name tardanzas && pm2 save && pm2 startup
-```
-Nginx como proxy (y certificado gratuito con `sudo certbot --nginx`):
-```nginx
-server {
-  server_name llegadas.suinstitucion.edu.co;
-  client_max_body_size 25m;
-  location / { proxy_pass http://127.0.0.1:3000; proxy_set_header Host $host;
-               proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; proxy_set_header X-Forwarded-Proto $scheme; }
-}
-```
-En `.env`: `COOKIE_SEGURA=true` y `CONFIAR_PROXY=1`.
-
-### B. Docker
-```bash
-cp .env.example .env && nano .env
-docker compose up -d --build
-```
-La base de datos queda en `./data` (volumen persistente).
-
-### C. Nube (Render, Railway, Fly.io)
-Cree un servicio web Node con comando `npm start`, agregue las variables del `.env` en el panel y **monte un disco persistente** en `/app/data` (o defina `RUTA_BASE_DATOS` dentro del disco). Sin disco persistente los datos se pierden al reiniciar.
-
-### D. Windows (servidor del colegio)
-Instale Node.js LTS, ejecute `npm install` y `npm start` en la carpeta. Para que inicie con el equipo use `pm2` + `pm2-windows-startup` o el Programador de tareas.
+### Paso 6 · Primer uso
+1. Ingrese con la cuenta de administrador.
+2. **Configuración → Institución:** nombre, firma de las notificaciones, correo institucional y límite (por defecto 4: entran a seguimiento con 5 o más).
+3. **Configuración → Períodos académicos** y **Grados y cursos** (si no ejecutó `datos_iniciales.sql`).
+4. **Registro → Carga masiva:** descargue la plantilla, diligénciela (o exporte desde el SIMAT/sistema académico) y cárguela.
+5. **Configuración → Usuarios y roles:** cree las cuentas de docentes y coordinadores.
+6. Prueba de correo: registre un estudiante de prueba con su propio correo como acudiente, repórtelo 5 veces (puede usar *Registrar con otra fecha*) y notifíquelo desde Seguimiento.
 
 ---
 
-## 7. Respaldo y recuperación
+## 4. Operación y mantenimiento
+- **Nuevo año lectivo:** cree los períodos del año; actualice grados/cursos de los estudiantes con una nueva carga masiva (el documento identifica al estudiante y se actualiza su curso). Los informes permiten filtrar por período.
+- **Retiros:** marque al estudiante como *retirado* para conservar su historial.
+- **Respaldo:** *Configuración → Respaldo* descarga todo en Excel. Supabase guarda copias diarias automáticas.
+- **Escudo:** reemplace `img/escudo.svg` o indique una URL en *Configuración → Institución*.
+- **Zona horaria:** fecha y hora de los reportes se toman del servidor en `America/Bogota` (campo `zona_horaria` de la tabla `configuracion`).
+- **Plan gratuito de Supabase:** los proyectos inactivos por 7 días se pausan; con uso diario escolar no ocurre, pero durante vacaciones puede reactivarlo desde el panel.
+- **Actualizar el esquema:** `schema.sql` es idempotente; puede volver a ejecutarlo tras cambios sin perder datos.
 
-- Desde la plataforma: *Configuración › Auditoría y respaldo › Descargar respaldo*.
-- Por consola: `npm run respaldo` (guarda en `respaldos/` y conserva los últimos 30).
-- Programación diaria (Linux): `crontab -e` → `0 19 * * * cd /opt/tardanzas && npm run respaldo`.
-- Restaurar: detenga el servidor y reemplace `data/tardanzas.db` por el archivo de respaldo.
-
-Guarde los respaldos cifrados y fuera del servidor: contienen datos personales de menores.
-
----
-
-## 8. Mantenimiento y soporte
-
-| Necesidad | Acción |
+## 5. Solución de problemas
+| Síntoma | Causa probable |
 |---|---|
-| Olvidó la contraseña del administrador | `npm run crear-admin -- correo@inst.edu.co "Nombre"` (crea o restablece) |
-| Cambiar el límite de seguimiento | *Configuración › Institución* |
-| Nuevo año lectivo | Cree los nuevos períodos; actualice grados/cursos con la carga masiva (los estudiantes se identifican por documento). Retire a los egresados. |
-| Estudiante que se retira | *Ver › Retirar estudiante* (conserva el historial). *Eliminar* borra todo: úselo solo ante solicitudes de supresión de datos. |
-| Error al reportar “sin período” | La fecha de hoy no está en ningún período: ajuste las fechas. |
-| Ver qué hizo cada usuario | *Configuración › Auditoría* |
+| «Su cuenta aún no está activa» | El usuario se registró por su cuenta: actívelo en *Usuarios y roles*. |
+| «No hay un período académico configurado» | La fecha de hoy no cae en ningún período. |
+| Error al notificar «Falta configurar el secreto…» | Revise los secretos de las funciones (Paso 4). |
+| Correos en estado «Enviado» y nunca «Entregado» | Falta registrar el webhook del proveedor. |
+| Error de CORS al notificar | `SITE_URL` no coincide con el origen del sitio (sin ruta ni barra final). |
+| El sitio muestra «Modo demostración» | `js/config.js` no tiene la URL/clave de Supabase. |
 
-### API (resumen)
-Todas las rutas requieren sesión; las que modifican datos exigen la cabecera `X-Requested-With: fetch`.
-`POST /api/auth/login` · `GET/POST/PUT/PATCH/DELETE /api/estudiantes` · `POST /api/estudiantes/importar` · `GET /api/tardanzas/estudiantes` · `POST /api/tardanzas` · `GET /api/seguimiento` · `POST /api/seguimiento/estudiante/:id/notificar` · `GET /api/seguimiento/estudiante/:id/reporte.pdf` · `GET /api/informes` · `POST /api/informes/exportar/{pdf|xlsx}` · `/api/configuracion/*`
-
----
-
-## 9. Repositorio en GitHub
-
-### Subir el proyecto por primera vez
-
-1. En GitHub cree un repositorio **privado** y **vacío** (sin README, sin .gitignore ni licencia), por ejemplo `control-llegadas-tarde`.
-2. En la carpeta del proyecto ejecute (reemplace `SU-USUARIO`):
-
-```bash
-git remote add origin https://github.com/SU-USUARIO/control-llegadas-tarde.git
-git branch -M main
-git push -u origin main
-```
-
-> Si descargó la carpeta sin historial de git, ejecute antes: `git init && git add . && git commit -m "Versión inicial"`.
-
-**Alternativa sin consola:** en el repositorio vacío use *Add file › Upload files* y arrastre el contenido de la carpeta **excepto** `node_modules`, `data` y `.env`. (Las carpetas que empiezan por punto, como `.github`, no siempre se arrastran desde el explorador: súbalas con *Create new file* escribiendo la ruta `.github/workflows/ci.yml` o use la consola.)
-
-### Qué NO se sube (ya está en `.gitignore`)
-`.env` (claves), `data/` y `*.db` (datos personales), `respaldos/`, `node_modules/` y `public/img/logo.png`.
-
-### Pruebas automáticas
-Cada vez que se sube un cambio a `main` o se abre un *pull request*, GitHub Actions instala el proyecto en Node 22 y 24, ejecuta las 12 pruebas de la API (`npm test`) y revisa vulnerabilidades de las dependencias. El resultado aparece en la pestaña **Actions**. Localmente: `npm test`.
-
-### Licencia
-El proyecto no incluye licencia (todos los derechos reservados). Si la institución desea compartirlo, agregue un archivo `LICENSE` (p. ej. MIT) desde GitHub con *Add file › Create new file › LICENSE › Choose a license template*.
-
----
-
-## 10. Modelo de datos
-
-- **usuarios** (nombre, email, rol admin/docente, contraseña cifrada, estado)
-- **periodos** (nombre, fecha_inicio, fecha_fin — sin cruces)
-- **grados** (nombre, orden) · **cursos** (grado, nombre)
-- **estudiantes** (documento único, nombre, edad, grado, curso, acudiente, correo, teléfono, dirección, activo)
-- **llegadas_tarde** (estudiante, fecha, hora, período, grado, curso, registrado_por, observación) — **única por estudiante y fecha**
-- **notificaciones** (estudiante, período, destinatario, asunto, cantidad, fechas, estado, detalle, fecha de envío)
-- **auditoria** (usuario, acción, detalle, IP, fecha) · **configuracion** (clave/valor)
+## 6. Licencias de terceros
+Supabase JS (MIT), Chart.js (MIT), SheetJS Community Edition (Apache 2.0), ExcelJS (MIT), jsPDF y jsPDF-AutoTable (MIT), fuente Public Sans (OFL).

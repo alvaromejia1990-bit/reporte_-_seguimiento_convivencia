@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Control de Llegadas Tarde</title>
+  <meta name="description" content="Plataforma institucional para registrar, controlar, analizar y hacer seguimiento a las llegadas tarde de los estudiantes.">
+  <meta name="theme-color" content="#123a6b">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <link rel="icon" href="img/escudo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!-- Pantalla de carga -->
+  <div id="arranque" class="arranque">
+    <img src="img/escudo.svg" alt="" width="64" height="64">
+    <div class="arranque__barra"><span></span></div>
+  </div>
+
+  <!-- Inicio de sesión -->
+  <section id="pantalla-login" class="login" hidden>
+    <div class="login__panel">
+      <div class="login__marca">
+        <img src="img/escudo.svg" alt="Escudo institucional" width="72" height="72" class="js-logo">
+        <div>
+          <p class="login__inst js-institucion">Institución Educativa</p>
+          <h1>Control de Llegadas Tarde</h1>
+        </div>
+      </div>
+      <form id="form-login" class="login__form" autocomplete="on" novalidate>
+        <label class="campo">
+          <span>Correo institucional</span>
+          <input type="email" name="correo" required autocomplete="username" placeholder="nombre@institucion.edu.co">
+        </label>
+        <label class="campo">
+          <span>Contraseña</span>
+          <input type="password" name="password" required autocomplete="current-password" placeholder="••••••••">
+        </label>
+        <p class="login__error" id="login-error" role="alert" hidden></p>
+        <button type="submit" class="btn btn--primario btn--bloque">Ingresar</button>
+        <button type="button" class="btn-enlace" id="btn-olvido">¿Olvidó su contraseña?</button>
+      </form>
+      <div id="login-demo" class="login__demo" hidden>
+        <strong>Modo demostración</strong>
+        <p>Los datos se guardan solo en este navegador. Para producción configure Supabase (ver README).</p>
+        <div class="login__demo-botones">
+          <button type="button" class="btn btn--suave" data-demo="admin">Entrar como administrador</button>
+          <button type="button" class="btn btn--suave" data-demo="docente">Entrar como docente</button>
+        </div>
+      </div>
+      <p class="login__legal">Acceso restringido a personal autorizado. Los datos personales de estudiantes y acudientes se tratan conforme a la Ley 1581 de 2012.</p>
+    </div>
+    <div class="login__fondo" aria-hidden="true"></div>
+  </section>
+
+  <!-- Aplicación -->
+  <div id="app" class="app" hidden>
+    <header class="cabecera">
+      <div class="cabecera__marca">
+        <img src="img/escudo.svg" alt="" width="40" height="40" class="js-logo">
+        <div class="cabecera__textos">
+          <span class="cabecera__inst js-institucion">Institución Educativa</span>
+          <span class="cabecera__sistema">Control de Llegadas Tarde</span>
+        </div>
+      </div>
+      <nav class="menu" id="menu" aria-label="Menú principal">
+        <a href="#registro" data-vista="registro"><span class="ico" data-ico="usuarios"></span><span>Registro</span></a>
+        <a href="#reportes" data-vista="reportes"><span class="ico" data-ico="reloj"></span><span>Reportes</span></a>
+        <a href="#seguimiento" data-vista="seguimiento"><span class="ico" data-ico="campana"></span><span>Seguimiento</span></a>
+        <a href="#informes" data-vista="informes"><span class="ico" data-ico="grafico"></span><span>Informes</span></a>
+      </nav>
+      <div class="cabecera__usuario">
+        <a href="#configuracion" class="btn-icono solo-admin" data-vista="configuracion" title="Configuración" aria-label="Configuración"><span class="ico" data-ico="ajustes"></span></a>
+        <button class="usuario-btn" id="btn-usuario" aria-haspopup="menu" aria-expanded="false">
+          <span class="usuario-btn__avatar" id="usuario-iniciales">--</span>
+          <span class="usuario-btn__datos">
+            <span id="usuario-nombre">Usuario</span>
+            <small id="usuario-rol">Rol</small>
+          </span>
+        </button>
+        <div class="menu-usuario" id="menu-usuario" role="menu" hidden>
+          <button role="menuitem" data-accion="clave"><span class="ico" data-ico="llave"></span>Cambiar contraseña</button>
+          <a role="menuitem" href="#configuracion" class="solo-admin"><span class="ico" data-ico="ajustes"></span>Configuración</a>
+          <button role="menuitem" data-accion="salir"><span class="ico" data-ico="salir"></span>Cerrar sesión</button>
+        </div>
+      </div>
+    </header>
+    <div class="aviso-demo" id="aviso-demo" hidden>
+      Modo demostración · datos de ejemplo guardados solo en este navegador · los correos se simulan
+    </div>
+    <main id="vista" class="vista" tabindex="-1"></main>
+    <footer class="pie">
+      <span class="js-institucion">Institución Educativa</span> · Sistema de control de llegadas tarde ·
+      Datos protegidos (Ley 1581 de 2012)
+    </footer>
+  </div>
+
+  <div id="capa-modales"></div>
+  <div id="capa-toasts" class="toasts" aria-live="polite"></div>
+
+  <!-- Bibliotecas (incluidas en /vendor para funcionar sin depender de CDN) -->
+  <script src="vendor/supabase.js"></script>
+  <script src="vendor/chart.umd.js"></script>
+  <script src="vendor/xlsx.full.min.js"></script>
+  <script src="vendor/exceljs.min.js"></script>
+  <script src="vendor/jspdf.umd.min.js"></script>
+  <script src="vendor/jspdf.plugin.autotable.min.js"></script>
+
+  <!-- Aplicación -->
+  <script src="js/config.js"></script>
+  <script src="js/util.js"></script>
+  <script src="js/plantilla-correo.js"></script>
+  <script src="js/backend-supabase.js"></script>
+  <script src="js/backend-demo.js"></script>
+  <script src="js/estadisticas.js"></script>
+  <script src="js/exportar.js"></script>
+  <script src="js/vistas/registro.js"></script>
+  <script src="js/vistas/reportes.js"></script>
+  <script src="js/vistas/seguimiento.js"></script>
+  <script src="js/vistas/informes.js"></script>
+  <script src="js/vistas/configuracion.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

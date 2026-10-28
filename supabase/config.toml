@@ -1,0 +1,6 @@
+project_id = "llegadas-tarde"
+
+# Configuración de las funciones de servidor para Supabase CLI.
+# El webhook del proveedor de correo no envía token de usuario.
+[functions.webhook-correo]
+verify_jwt = false

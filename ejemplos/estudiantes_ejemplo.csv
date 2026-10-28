@@ -1,4 +1,4 @@
-Documento;Nombre completo;Edad;Grado;Curso;Acudiente;Correo acudiente;Teléfono;Dirección
-1070600001;Laura Sofía Gómez Ruiz;12;Sexto;601;Marta Ruiz Pérez;marta.ruiz@correo.com;3001234567;Calle 10 # 5-20
-1070600002;Juan Esteban Rojas Díaz;13;Séptimo;701;Carlos Rojas Gil;carlos.rojas@correo.com;3109876543;Carrera 7 # 12-40
-1070600003;Valentina Ortiz Mejía;15;Noveno;901;Gloria Mejía Torres;gloria.mejia@correo.com;3205551234;Avenida 3 # 8-15
+tipo_documento;documento;apellidos;nombres;edad;grado;curso;acudiente_nombre;acudiente_parentesco;acudiente_correo;acudiente_telefono;direccion
+TI;1105123456;Pérez Gómez;Ana María;12;Sexto;601;Luisa Gómez;Madre;luisa.gomez@correo.com;3101234567;Calle 10 # 5-20
+TI;1105987654;Ramírez Díaz;Juan David;13;7;702;Carlos Ramírez;Padre;carlos.ramirez@correo.com;3209876543;Carrera 8 # 12-40
+TI;1105555111;Torres Lozano;Valentina;15;Noveno;901;Gloria Lozano;Abuela;gloria.lozano@correo.com;3115556677;Barrio Granada
