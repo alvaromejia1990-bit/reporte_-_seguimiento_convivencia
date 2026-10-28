@@ -8,4 +8,3 @@ services:
       - "3000:3000"
     volumes:
       - ./data:/app/data
-      - ./public/img/logo.png:/app/public/img/logo.png:ro   # opcional: escudo de la institución

@@ -9,7 +9,8 @@
     "dev": "node --watch src/server.js",
     "crear-admin": "node scripts/crear-admin.js",
     "demo": "node scripts/seed-demo.js",
-    "respaldo": "node scripts/respaldo.js"
+    "respaldo": "node scripts/respaldo.js",
+    "test": "node --test --test-concurrency=1 \"tests/**/*.test.js\""
   },
   "engines": {
     "node": ">=22.13"

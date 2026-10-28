@@ -22,9 +22,12 @@ control-tardanzas/
 │   ├── js/views/             registro, reportes, seguimiento, informes, configuración
 │   └── img/                  escudo.svg (por defecto) · coloque aquí logo.png
 ├── scripts/                  crear-admin, seed-demo (datos de prueba), respaldo
+├── tests/                    Pruebas automáticas de la API (npm test)
 ├── ejemplos/                 estudiantes_ejemplo.csv
+├── .github/                  Pruebas automáticas (GitHub Actions), Dependabot, plantillas
 ├── .env.example              Plantilla de configuración
 ├── Dockerfile, docker-compose.yml
+├── SECURITY.md
 └── README.md
 ```
 
@@ -213,7 +216,35 @@ Todas las rutas requieren sesión; las que modifican datos exigen la cabecera `X
 
 ---
 
-## 9. Modelo de datos
+## 9. Repositorio en GitHub
+
+### Subir el proyecto por primera vez
+
+1. En GitHub cree un repositorio **privado** y **vacío** (sin README, sin .gitignore ni licencia), por ejemplo `control-llegadas-tarde`.
+2. En la carpeta del proyecto ejecute (reemplace `SU-USUARIO`):
+
+```bash
+git remote add origin https://github.com/SU-USUARIO/control-llegadas-tarde.git
+git branch -M main
+git push -u origin main
+```
+
+> Si descargó la carpeta sin historial de git, ejecute antes: `git init && git add . && git commit -m "Versión inicial"`.
+
+**Alternativa sin consola:** en el repositorio vacío use *Add file › Upload files* y arrastre el contenido de la carpeta **excepto** `node_modules`, `data` y `.env`. (Las carpetas que empiezan por punto, como `.github`, no siempre se arrastran desde el explorador: súbalas con *Create new file* escribiendo la ruta `.github/workflows/ci.yml` o use la consola.)
+
+### Qué NO se sube (ya está en `.gitignore`)
+`.env` (claves), `data/` y `*.db` (datos personales), `respaldos/`, `node_modules/` y `public/img/logo.png`.
+
+### Pruebas automáticas
+Cada vez que se sube un cambio a `main` o se abre un *pull request*, GitHub Actions instala el proyecto en Node 22 y 24, ejecuta las 12 pruebas de la API (`npm test`) y revisa vulnerabilidades de las dependencias. El resultado aparece en la pestaña **Actions**. Localmente: `npm test`.
+
+### Licencia
+El proyecto no incluye licencia (todos los derechos reservados). Si la institución desea compartirlo, agregue un archivo `LICENSE` (p. ej. MIT) desde GitHub con *Add file › Create new file › LICENSE › Choose a license template*.
+
+---
+
+## 10. Modelo de datos
 
 - **usuarios** (nombre, email, rol admin/docente, contraseña cifrada, estado)
 - **periodos** (nombre, fecha_inicio, fecha_fin — sin cruces)
