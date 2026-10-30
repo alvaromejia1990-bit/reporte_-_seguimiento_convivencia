@@ -12,7 +12,7 @@
  * del repositorio GOOGLE_SCRIPT_URL (o SUPABASE_URL y SUPABASE_ANON_KEY).
  */
 window.LT_CONFIG = {
-  GOOGLE_SCRIPT_URL: "",
+  GOOGLE_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbzQThNwIiSNQOxb7D0AH6GaZCRxKO0O9IANhkUP_rXxDDbBDG2_OGmF4wy290iTRmqELQ/exec",
   SUPABASE_URL: "",
   SUPABASE_ANON_KEY: "",
   ZONA_HORARIA: "America/Bogota",
