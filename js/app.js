@@ -4,9 +4,11 @@
   const LT = window.LT;
   const U = LT.util;
   const cfg = window.LT_CONFIG || {};
-  const usarSupabase = !!(cfg.SUPABASE_URL && cfg.SUPABASE_ANON_KEY);
+  const usarGoogle = /^https?:\/\//.test(String(cfg.GOOGLE_SCRIPT_URL || "").trim());
+  const usarSupabase = !usarGoogle && !!(cfg.SUPABASE_URL && cfg.SUPABASE_ANON_KEY);
+  if (usarGoogle) cfg.GOOGLE_SCRIPT_URL = cfg.GOOGLE_SCRIPT_URL.trim();
 
-  const estado = (LT.estado = { backend: usarSupabase ? LT.backendSupabase : LT.backendDemo, usuario: null, cat: null, cacheEst: null, vista: null });
+  const estado = (LT.estado = { backend: usarGoogle ? LT.backendGoogle : usarSupabase ? LT.backendSupabase : LT.backendDemo, usuario: null, cat: null, cacheEst: null, vista: null });
   const esAdmin = () => estado.usuario && estado.usuario.rol === "admin";
 
   LT.app = {
@@ -52,7 +54,7 @@
       await estado.backend.init();
     } catch (e) {
       U.$("#arranque").hidden = true;
-      document.body.insertAdjacentHTML("afterbegin", `<div class="aviso aviso--peligro" style="margin:20px">${U.ico("alerta")}<div><strong>No fue posible conectar con la base de datos.</strong><br>${U.esc(LT.error(e))}<br>Revise js/config.js.</div></div>`);
+      document.body.insertAdjacentHTML("afterbegin", `<div class="aviso aviso--peligro" style="margin:20px">${U.ico("alerta")}<div><strong>No fue posible conectar con la base de datos.</strong><br>${U.esc(LT.error(e))}<br>Revise la URL del servidor en js/config.js.</div></div>`);
       return;
     }
     estado.backend.alRecuperarClave && estado.backend.alRecuperarClave(() => cambiarClave(true));

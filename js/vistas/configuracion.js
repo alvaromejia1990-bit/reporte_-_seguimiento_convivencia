@@ -163,9 +163,9 @@
               <label class="campo"><span>Nombre completo</span><input name="nombre" required></label>
               <label class="campo"><span>Correo</span><input name="correo" type="email" required></label>
               <label class="campo"><span>Rol</span><select name="rol"><option value="docente">Docente</option><option value="admin">Administrador</option></select></label>
-              <label class="campo"><span>Contraseña inicial</span><input name="password" type="text" minlength="8" value="${generarClave()}" required><small class="ayuda">Compártala de forma segura; el usuario puede cambiarla.</small></label></form>`,
-            botones: [{ texto: "Cancelar", clase: "btn--fantasma" }, { texto: "Crear usuario", clase: "btn--primario", accion: async (m) => { await b().crearUsuario(Object.fromEntries(new FormData(U.$("#fu", m.el)).entries())); } }] });
-          if (r) { U.toast("Usuario creado"); pintar(); }
+              <label class="campo"><span>Contraseña inicial</span><input name="password" type="text" minlength="8" value="${generarClave()}" required><small class="ayuda">${b().modo === "google" ? "Se enviará al correo del usuario; deberá cambiarla al ingresar." : "Compártala de forma segura; el usuario puede cambiarla."}</small></label></form>`,
+            botones: [{ texto: "Cancelar", clase: "btn--fantasma" }, { texto: "Crear usuario", clase: "btn--primario", accion: async (m) => (await b().crearUsuario(Object.fromEntries(new FormData(U.$("#fu", m.el)).entries()))) || true }] });
+          if (r) { U.toast(r.correo_enviado ? "Usuario creado. Se le envió un correo con sus datos de acceso." : "Usuario creado"); pintar(); }
         } else if (d.rol) { await b().actualizarUsuario(u.id, { rol: u.rol === "admin" ? "docente" : "admin" }); U.toast("Rol actualizado"); pintar(); }
         else if (d.activo) { await b().actualizarUsuario(u.id, { activo: !u.activo }); U.toast(u.activo ? "Usuario desactivado" : "Usuario activado"); pintar(); }
         else if (d.clave) {
@@ -219,7 +219,9 @@
         ${demo ? `<hr style="border:0;border-top:1px solid var(--borde-2);margin:20px 0">
           <h3 style="margin-bottom:6px">Datos de demostración</h3><p class="muted" style="margin-top:0">Restaura los datos de ejemplo en este navegador.</p>
           <button class="btn btn--peligro" id="cf-reset">${U.ico("recargar")}Restablecer datos de ejemplo</button>`
-        : `<p class="muted peq" style="margin-top:16px">Supabase además realiza copias de seguridad automáticas diarias de la base de datos (según el plan contratado).</p>`}
+        : b().modo === "google"
+          ? `<p class="muted peq" style="margin-top:16px">Los datos viven en la hoja de cálculo «BD Control de Llegadas Tarde» de su Google Drive. Drive conserva el historial de versiones (Archivo › Historial de versiones) para restaurar cambios.</p>`
+          : `<p class="muted peq" style="margin-top:16px">Supabase además realiza copias de seguridad automáticas diarias de la base de datos (según el plan contratado).</p>`}
       </div></div>`;
     U.$("#cf-respaldo", c).addEventListener("click", async (e) => {
       const btn = e.currentTarget; U.ocupado(btn, true);

@@ -1,14 +1,18 @@
 /*
- * Configuración de conexión.
+ * Configuración de conexión. Elija UNA opción:
  *
- * · Deje SUPABASE_URL vacío para usar el MODO DEMOSTRACIÓN (datos en el navegador).
- * · Para producción, copie aquí la URL y la clave pública "anon" de su proyecto Supabase
- *   (Supabase › Project Settings › API). La clave anon es pública por diseño: la
- *   seguridad la garantizan las políticas RLS definidas en supabase/schema.sql.
- * · Si publica con GitHub Actions, este archivo se genera automáticamente a partir de las
- *   variables del repositorio SUPABASE_URL y SUPABASE_ANON_KEY (ver README).
+ * A) GOOGLE DRIVE + GMAIL (recomendada): pegue en GOOGLE_SCRIPT_URL la URL de la
+ *    aplicación web de Apps Script (termina en /exec). Ver docs/GUIA_GOOGLE_DRIVE.md.
+ * B) SUPABASE (alternativa avanzada): URL y clave pública "anon" del proyecto.
+ *    Ver docs/ALTERNATIVA_SUPABASE.md.
+ *
+ * Si ambas quedan vacías, la plataforma funciona en MODO DEMOSTRACIÓN (datos de
+ * ejemplo guardados solo en el navegador).
+ * Si publica con GitHub Actions, este archivo se genera a partir de las variables
+ * del repositorio GOOGLE_SCRIPT_URL (o SUPABASE_URL y SUPABASE_ANON_KEY).
  */
 window.LT_CONFIG = {
+  GOOGLE_SCRIPT_URL: "",
   SUPABASE_URL: "",
   SUPABASE_ANON_KEY: "",
   ZONA_HORARIA: "America/Bogota",

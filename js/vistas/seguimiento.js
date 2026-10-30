@@ -179,7 +179,8 @@
     const enviado = await U.modal({
       titulo: "Notificar acudiente", tam: "lg",
       html: `<dl class="ficha" style="margin-bottom:12px"><div><dt>Para</dt><dd>${U.esc(previa.destinatario)}</dd></div><div><dt>Asunto</dt><dd>${U.esc(previa.asunto)}</dd></div></dl>
-        ${LT.estado.backend.modo === "demo" ? `<div class="aviso aviso--alerta">${U.ico("info")}<div>Modo demostración: el envío se simula. En producción se envía mediante el servicio de correo configurado (Brevo o Resend).</div></div>` : ""}
+        ${LT.estado.backend.modo === "demo" ? `<div class="aviso aviso--alerta">${U.ico("info")}<div>Modo demostración: el envío se simula. En producción el correo sale realmente desde el Gmail institucional.</div></div>` : ""}
+        ${LT.estado.backend.modo === "google" && previa.cupo != null ? `<div class="aviso aviso--info">${U.ico("info")}<div>Se enviará desde la cuenta de Gmail institucional (quedará en su carpeta «Enviados»). Correos disponibles hoy: <strong>${previa.cupo}</strong>.</div></div>` : ""}
         <iframe class="vista-correo" id="n-vista" title="Vista previa del correo" sandbox=""></iframe>`,
       alAbrir: (m) => { U.$("#n-vista", m).srcdoc = previa.html; },
       botones: [{ texto: "Cancelar", clase: "btn--fantasma" }, { texto: "Enviar correo", clase: "btn--primario", icono: "correo", accion: async () => {
